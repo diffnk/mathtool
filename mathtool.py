@@ -1,110 +1,88 @@
-import math
-import sys
 
-# Предельное значение модуля коэффициентов
+import sys
+import math
+
 MAX_VALUE = 10000
 
-HELP_TEXT = """mathtool — решение уравнений вида A*x^2 + B*x + C = 0
+# Разбор параметров командной строки
+args = sys.argv[1:]
 
-Использование:
-    cd mathtool                                если не находит файл
-    python mathtool.py                         вывод справки
-    python mathtool.py --help                  вывод справки
-    python mathtool.py solve                   ввод коэффициентов с клавиатуры
-    python mathtool.py solve -a 1 -b -3 -c 2   решение с заданными коэффициентами
+if len(args) == 0 or args == ["--help"]:
+    print("Решение уравнения A*x^2 + B*x + C = 0")
+    print("Использование:")
+    print("python mathtool.py")
+    print("python mathtool.py --help")
+    print("python mathtool.py solve")
+    print("python mathtool.py solve -a 1 -b -3 -c 2")
+    print(f"Коэффициенты A, B, C должны быть целыми числами до {MAX_VALUE}.")
+    sys.exit(0)
 
-Коэффициенты A, B, C — целые числа, по модулю не превышающие 10000."""
-
-
-def fail(message):
-    """Вывести сообщение об ошибке в поток ошибок и завершить работу с кодом 1."""
-    print(message, file=sys.stderr)
+if args[0] != "solve":
+    print("ОШИБКА: неизвестная команда", file=sys.stderr)
     sys.exit(1)
 
-
-def fmt(x):
-    """Форматировать корень с тремя знаками после запятой (без «-0.000»)."""
-    if round(x, 3) == 0:
-        x = 0.0
-    return f"{x:.3f}"
-
-def parse_arguments(args):
-    """Вернуть кортеж строк (A, B, C) либо None, если коэффициенты
-    нужно запросить у пользователя."""
-    if len(args) == 0 or args[0] == "--help":
-        print(HELP_TEXT)
-        sys.exit(0)
-
-    if args[0] != "solve":
-        fail(f"ОШИБКА: неизвестная команда '{args[0]}'")
-
+# Получение коэффициентов
+try:
     if len(args) == 1:
-        return None
+        A = int(input("Введите A: "))
+        B = int(input("Введите B: "))
+        C = int(input("Введите C: "))
 
-    if len(args) == 7:
+    elif len(args) == 7:
         if args[1] != "-a" or args[3] != "-b" or args[5] != "-c":
-            fail("ОШИБКА: неизвестный параметр (ожидается -a, -b, -c)")
-        return args[2], args[4], args[6]
+            print("ОШИБКА: неизвестный параметр", file=sys.stderr)
+            sys.exit(1)
 
-    fail("ОШИБКА: неверный набор параметров")
+        A = int(args[2])
+        B = int(args[4])
+        C = int(args[6])
 
-def read_coefficients(raw):
-    """Получить коэффициенты (с клавиатуры или из параметров) как целые числа."""
-    try:
-        if raw is None:
-            a = int(input("Введите A: "))
-            b = int(input("Введите B: "))
-            c = int(input("Введите C: "))
-        else:
-            a, b, c = (int(value) for value in raw)
-    except ValueError:
-        fail("ОШИБКА: коэффициент не является целым числом")
-    except EOFError:
-        fail("ОШИБКА: ввод прерван, коэффициенты не получены")
-    return a, b, c
+    else:
+        print("ОШИБКА: неверный набор параметров", file=sys.stderr)
+        sys.exit(1)
 
-def check_range(a, b, c):
-    if abs(a) > MAX_VALUE or abs(b) > MAX_VALUE or abs(c) > MAX_VALUE:
-        fail("ОШИБКА: значение вне допустимого диапазона")
+except ValueError:
+    print("ОШИБКА: коэффициент не является целым числом", file=sys.stderr)
+    sys.exit(1)
 
-def solve_linear(b, c):
-    """Случай A = 0: уравнение B*x + C = 0."""
-    if b == 0:
-        fail("ОШИБКА: это не уравнение, неизвестное отсутствует")
+except EOFError:
+    print("ОШИБКА: ввод данных прерван", file=sys.stderr)
+    sys.exit(1)
+
+# Проверка допустимых значений
+if abs(A) > MAX_VALUE or abs(B) > MAX_VALUE or abs(C) > MAX_VALUE:
+    print("ОШИБКА: значение вне допустимого диапазона", file=sys.stderr)
+    sys.exit(1)
+
+# Решение линейного уравнения
+if A == 0:
+    if B == 0:
+        print("ОШИБКА: это не уравнение, неизвестное отсутствует", file=sys.stderr)
+        sys.exit(1)
+
     print("Уравнение линейное")
-    x = -c / b
-    print(f"x = {fmt(x)}")
+    x = -C / B
+    print(f"x = {x:.3f}")
 
-
-def solve_quadratic(a, b, c):
-    """Случай A != 0: квадратное уравнение."""
+# Решение квадратного уравнения
+else:
     print("Уравнение квадратное")
-    d = b * b - 4 * a * c
-    print(f"D = {d}")
 
-    if d > 0:
-        root = math.sqrt(d)
-        x1 = (-b + root) / (2 * a)
-        x2 = (-b - root) / (2 * a)
-        print(f"x1 = {fmt(x1)}")
-        print(f"x2 = {fmt(x2)}")
-    elif d == 0:
-        x = -b / (2 * a)
-        print(f"x = {fmt(x)}")
+    D = B ** 2 - 4 * A * C
+    print(f"D = {D}")
+
+    if D > 0:
+        x1 = (-B + math.sqrt(D)) / (2 * A)
+        x2 = (-B - math.sqrt(D)) / (2 * A)
+
+        print(f"x1 = {x1:.3f}")
+        print(f"x2 = {x2:.3f}")
+
+    elif D == 0:
+        x = -B / (2 * A)
+        print(f"x = {x:.3f}")
+
     else:
         print("Действительных корней нет")
 
-
-def main():
-    raw = parse_arguments(sys.argv[1:])
-    a, b, c = read_coefficients(raw)
-    check_range(a, b, c)
-
-    if a == 0:
-        solve_linear(b, c)
-    else:
-        solve_quadratic(a, b, c)
-
-
-if __name__ == "__main__":
-    main()
+sys.exit(0)
